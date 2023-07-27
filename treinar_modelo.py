@@ -5,10 +5,14 @@ import pickle
 from imutils import paths
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
-from keras.models import Sequential
-from keras.layers.convolutional import Conv2D, MaxPooling2D
-from keras.layers.core import Flatten, Dense
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.callbacks import TensorBoard  # Importe o TensorBoard callback
 from helpers import resize_to_fit
+
+# Função para exibir informações do dataset
+def print_dataset_info(name, dataset):
+    print(f" - Dataset: {name}, Tipo de Dados: {dataset.dtype}")
 
 dados = []
 rotulos = []
@@ -42,8 +46,12 @@ lb = LabelBinarizer().fit(Y_train)
 Y_train = lb.transform(Y_train)
 Y_test = lb.transform(Y_test)
 
-# salvar o labelbinarizer em um arquivo com o pickle
-with open('rotulos_modelo.dat', 'wb') as arquivo_pickle:
+# salvar o labelbinarizer em um arquivo com o pickle dentro da pasta logs
+logs_dir = "logs"
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
+
+with open(os.path.join(logs_dir, 'rotulos_modelo.dat'), 'wb') as arquivo_pickle:
     pickle.dump(lb, arquivo_pickle)
 
 # criar e treinar a inteligência artificial
@@ -63,8 +71,13 @@ modelo.add(Dense(26, activation="softmax"))
 # compilar todas as camadas
 modelo.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
-# treinar a inteligência artificial
-modelo.fit(X_train, Y_train, validation_data=(X_test, Y_test), batch_size=26, epochs=10, verbose=1)
+# Callback para o TensorBoard
+log_dir = os.path.join(logs_dir, "logs")  # Diretório onde os logs serão salvos
+tensorboard_callback = TensorBoard(log_dir=log_dir)
 
-# salvar o modelo em um arquivo
-modelo.save("modelo_treinado.hdf5")
+# Treinar o modelo e usar o callback do TensorBoard
+modelo.fit(X_train, Y_train, validation_data=(X_test, Y_test), batch_size=26, epochs=10, verbose=1, callbacks=[tensorboard_callback])
+
+# salvar o modelo em um arquivo na pasta logs
+modelo.save(os.path.join(logs_dir, "modelo_treinado.hdf5"))
+

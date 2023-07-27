@@ -20,19 +20,35 @@ for arquivo in arquivos:
         area = cv2.contourArea(contorno)
         if area > 115:
             regiao_letras.append((x, y, largura, altura))
+
     if len(regiao_letras) != 5:
         continue
+
     # desenhar os contornos e separar as letras em arquivos individuais
 
     imagem_final = cv2.merge([imagem] * 3)
 
-    i = 0
-    for retangulo in regiao_letras:
+    for i, retangulo in enumerate(regiao_letras):
         x, y, largura, altura = retangulo
-        imagem_letra = imagem[y-2:y+altura+2, x-2:x+largura+2]
-        i += 1
-        nome_arquivo = os.path.basename(arquivo).replace(".png", f"letra{i}.png")
+
+        # Certifique-se de que as coordenadas e dimensões do retângulo sejam positivas
+        if x < 0:
+            x = 0
+        if y < 0:
+            y = 0
+        if largura < 0:
+            largura = 0
+        if altura < 0:
+            altura = 0
+
+        # Recorte a imagem da letra usando as coordenadas e dimensões corretas
+        imagem_letra = imagem[y:y+altura, x:x+largura]
+
+        nome_arquivo = os.path.basename(arquivo).replace(".png", f"letra{i+1}.png")
         cv2.imwrite(f'letras/{nome_arquivo}', imagem_letra)
-        cv2.rectangle(imagem_final, (x-2, y-2), (x+largura+2, y+altura+2), (0, 255, 0), 1)
+
+        cv2.rectangle(imagem_final, (x, y), (x+largura, y+altura), (0, 255, 0), 1)
+
     nome_arquivo = os.path.basename(arquivo)
     cv2.imwrite(f"identificado/{nome_arquivo}", imagem_final)
+
